@@ -5,7 +5,8 @@ import 'package:provider/provider.dart';
 void main() {
   runApp(MyApp());
 }
-// test commit 
+
+// test commit
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -27,6 +28,7 @@ class MyApp extends StatelessWidget {
 
 class MyAppState extends ChangeNotifier {
   var current = WordPair.random();
+  int countOfClickHome = 0;
 
   void getNext() {
     current = WordPair.random();
@@ -44,11 +46,36 @@ class MyAppState extends ChangeNotifier {
     print(favorites);
     notifyListeners();
   }
+
+  void increaseToCountOfHome() {
+    countOfClickHome = countOfClickHome + 1;
+  }
 }
 
-class MyHomePage extends StatelessWidget {
+// ...
+
+class MyHomePage extends StatefulWidget {
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  var selectedIndex = 0;
+
   @override
   Widget build(BuildContext context) {
+    Widget page;
+    switch (selectedIndex) {
+      case 0:
+        page = GeneratorPage();
+        break;
+      case 1:
+        page = FavoritePage();
+        break;
+      default:
+        throw UnimplementedError('no widget for $selectedIndex');
+    }
+    var appState = context.watch<MyAppState>();
     return Scaffold(
       body: Row(
         children: [
@@ -65,16 +92,24 @@ class MyHomePage extends StatelessWidget {
                   label: Text('Favorites'),
                 ),
               ],
-              selectedIndex: 0,
+              selectedIndex: selectedIndex,
               onDestinationSelected: (value) {
-                print('selected: $value');
+                setState(() {
+                  selectedIndex = value;
+                });
+
+                if (value == 0) {
+                  appState.increaseToCountOfHome();
+                }
+                var test = appState.countOfClickHome;
+                print('countOfClickHome: $test');
               },
             ),
           ),
           Expanded(
             child: Container(
               color: Theme.of(context).colorScheme.primaryContainer,
-              child: GeneratorPage(),
+              child: page,
             ),
           ),
         ],
@@ -82,7 +117,6 @@ class MyHomePage extends StatelessWidget {
     );
   }
 }
-
 
 class GeneratorPage extends StatelessWidget {
   @override
@@ -124,6 +158,35 @@ class GeneratorPage extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class FavoritePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    var appState = context.watch<MyAppState>();
+
+    if (appState.favorites.isEmpty) {
+      return Center(
+        child: Text('No favorites yet.'),
+      );
+    }
+
+    return ListView(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(20),
+          child: Text('You have '
+              '${appState.favorites.length} favorites:'),
+        ),
+        for (var pair in appState.favorites)
+          ListTile(
+            leading: Icon(Icons.favorite),
+            title: Text(pair.asLowerCase),
+            contentPadding: EdgeInsets.all(222),
+          ),
+      ],
     );
   }
 }
